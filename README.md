@@ -1,0 +1,1 @@
+This is a classroom assignment to get familiar with how a stricly object oriented language like Ruby works.
