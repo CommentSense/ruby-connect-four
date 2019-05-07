@@ -6,33 +6,33 @@
 #------------------------------------------------------------------
 class Board
   def initialize
-  @board = [[nil,nil,nil,nil,nil,nil,nil],
-            [nil,nil,nil,nil,nil,nil,nil],
-            [nil,nil,nil,nil,nil,nil,nil],
-            [nil,nil,nil,nil,nil,nil,nil],
-            [nil,nil,nil,nil,nil,nil,nil],
-            [nil,nil,nil,nil,nil,nil,nil] ]
+    @board = [[nil, nil, nil, nil, nil, nil, nil],
+              [nil, nil, nil, nil, nil, nil, nil],
+              [nil, nil, nil, nil, nil, nil, nil],
+              [nil, nil, nil, nil, nil, nil, nil],
+              [nil, nil, nil, nil, nil, nil, nil],
+              [nil, nil, nil, nil, nil, nil, nil]]
   end
 
   # process a sequence of moves, each just a column number
-  def addDiscs(firstPlayer, moves)
-    if firstPlayer == :R
-      players = [:R, :O].cycle
-    else 
-      players = [:O, :R].cycle
+  def add_discs(first_player, moves)
+    players = if first_player == :R
+      [:R,:O].cycle
+    else
+      [:O, :R].cycle
     end
-    moves.each {|c| addDisc(players.next, c)}
-  end 
+    moves.each {|c| add_disc(players.next, c)}
+  end
 
-  def addDisc(player, column)
+  def add_disc(player, column)
     if column >= 7 || column < 0
-      puts "  addDisc(#{player},#{column}): out of bounds; move forfeit"
-    end 
-    firstFreeRow =  @board.transpose.slice(column).index(nil)
-    if firstFreeRow == nil  
-      puts "  addDisc(#{player},#{column}): column full already; move forfeit"
+      puts "  add_disc(#{player},#{column}): out of bounds; move forfeit"
     end
-    update(firstFreeRow, column, player)
+    first_free_row = @board.transpose.slice(column).index(nil)
+    if first_free_row == nil
+      puts "  add_disc(#{player},#{column}): column full already; move forfeit"
+    end
+    update(first_free_row, column, player)
   end
 
   def update(row, col, player)
@@ -40,14 +40,14 @@ class Board
   end
 
   def print
-    puts @board.map {|row| row.map { |e| e || " "}.join("|")}.join("\n")
+    puts @board.reverse_each.map {|row| row.map {|e| e || " "}.join("|")}.join("\n")
     puts "\n"
   end
 
-  def hasWon? (player)
-    return verticalWin?(player)| horizontalWin?(player) | 
-           diagonalUpWin?(player)| diagonalDownWin?(player)
-  end 
+  def won? (player)
+    return verticalWin?(player) | horizontalWin?(player) |
+        diagonalUpWin?(player) | diagonalDownWin?(player)
+  end
 
   def verticalWin? (player)
     (0..6).any? {|c| (0..2).any? {|r| fourFromTowards?(player, r, c, 1, 0)}}
@@ -66,14 +66,14 @@ class Board
   end
 
   def fourFromTowards?(player, r, c, dx, dy)
-    return (0..3).all?{|step| @board[r+step*dx][c+step*dy] == player}
+    return (0..3).all? {|step| @board[r + step * dx][c + step * dy] == player}
   end
 
 end # Board
 #------------------------------------------------------------------
 
-def robotMove(player, board)   # stub
-  return 0          
+def robotMove(player, board) # stub
+  return 0
   #return rand(7)   
 end
 
@@ -87,30 +87,40 @@ def testResult(testID, move, targets, intent)
   end
 end
 
+def engine(board)
+  while (!board.won?(:R) || !board.won?(:O))
+
+  end
+
+end
+
+board = Board.new
+engine(board)
 
 #------------------------------------------------------------------
 # test some robot-player behaviors
-testboard1 = Board.new
-testboard1.addDisc(:R,4)
-testboard1.addDisc(:O,4)
-testboard1.addDisc(:R,5)
-testboard1.addDisc(:O,5)
-testboard1.addDisc(:R,6)
-testboard1.addDisc(:O,6)
-testResult(:hwin, robotMove(:R, testboard1),[3], 'robot should take horizontal win')
-testboard1.print
+# testboard1 = Board.new
+# testboard1.add_disc(:R,4)
+# testboard1.add_disc(:O,4)
+# testboard1.add_disc(:R,5)
+# testboard1.add_disc(:O,5)
+# testboard1.add_disc(:R,6)
+# testboard1.add_disc(:O,6)
+# testResult(:hwin, robotMove(:R, testboard1),[3], 'robot should take horizontal win')
+# testboard1.print
+#
+# testboard2 = Board.new
+# testboard2.add_discs(:R, [3, 1, 3, 2, 3, 4]);
+# testResult(:vwin, robotMove(:R, testboard2), [3], 'robot should take vertical win')
+# testboard2.print
+#
+# testboard3 = Board.new
+# testboard3.add_discs(:O, [3, 1, 4, 5, 2, 1, 6, 0, 3, 4, 5, 3, 2, 2, 6 ]);
+# testResult(:dwin, robotMove(:R, testboard3), [3], 'robot should take diagonal win')
+# testboard3.print
+#
+# testboard4 = Board.new
+# testboard4.add_discs(:O, [1,1,2,2,3])
+# testResult(:preventHoriz, robotMove(:R, testboard4), [4], 'robot should avoid giving win')
+# testboard4.print
 
-testboard2 = Board.new
-testboard2.addDiscs(:R, [3, 1, 3, 2, 3, 4]);
-testResult(:vwin, robotMove(:R, testboard2), [3], 'robot should take vertical win')
-testboard2.print
-
-testboard3 = Board.new
-testboard3.addDiscs(:O, [3, 1, 4, 5, 2, 1, 6, 0, 3, 4, 5, 3, 2, 2, 6 ]);
-testResult(:dwin, robotMove(:R, testboard3), [3], 'robot should take diagonal win')
-testboard3.print
-
-testboard4 = Board.new
-testboard4.addDiscs(:O, [1,1,2,2,3])
-testResult(:preventHoriz, robotMove(:R, testboard4), [4], 'robot should avoid giving win')
-testboard4.print
