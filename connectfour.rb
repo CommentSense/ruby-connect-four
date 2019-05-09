@@ -14,23 +14,33 @@ class Board
               [nil, nil, nil, nil, nil, nil, nil]]
   end
 
+  def copy
+    newBoard = Board.new
+    newBoard.setBoard(Marshal.load(Marshal.dump(@board)))
+    return newBoard
+  end
+
+  def setBoard(board)
+    @board = board
+  end
+
   # process a sequence of moves, each just a column number
-  def add_discs(first_player, moves)
+  def addDiscs(first_player, moves)
     players = if first_player == :R
       [:R,:O].cycle
     else
       [:O, :R].cycle
     end
-    moves.each {|c| add_disc(players.next, c)}
+    moves.each {|c| addDisc(players.next, c)}
   end
-
-  def add_disc(player, column)
+  
+  def addDisc(player, column)
     if column >= 7 || column < 0
-      puts "  add_disc(#{player},#{column}): out of bounds; move forfeit"
+      puts "  addDisc(#{player},#{column}): out of bounds; move forfeit"
     end
     first_free_row = @board.transpose.slice(column).index(nil)
     if first_free_row == nil
-      puts "  add_disc(#{player},#{column}): column full already; move forfeit"
+      puts "  addDisc(#{player},#{column}): column full already; move forfeit"
     end
     update(first_free_row, column, player)
   end
@@ -44,7 +54,7 @@ class Board
     puts "\n"
   end
 
-  def won? (player)
+  def hasWon? (player)
     return verticalWin?(player) | horizontalWin?(player) |
         diagonalUpWin?(player) | diagonalDownWin?(player)
   end
@@ -71,12 +81,95 @@ class Board
 
 end # Board
 #------------------------------------------------------------------
-
-def robotMove(player, board) # stub
-  return 0
+=begin
+  The strategy for the robot is fairly simple, first we check for winning moves
+  then we worry about blocking the players moves, after we avoid helping them win, 
+  and lastly add Discs to build a win
+=end
+def robotMove(board) # stub
+  block = block(board)
+  # detect any moves to avoid and remove them
+  avoid = avoidMoves(board)
+  moves = [0,1,2,3,4,5,6]
+  moves -= avoid if !avoid.nil?
+  # check for winning moves
+  winMove = buildWin(board, moves)
+  
+  if !winMove.nil?
+    board.addDisc(:O, winMove)
+  elsif !block.nil? # move to block detected
+    board.addDisc(:O, block)
+  else
+    board.addDisc(:O, moves.sample)
+  end
   #return rand(7)   
 end
 
+=begin
+  We duplicate the board and we check for every move if any will
+  cause a win for the opponent. If so we insert our disc there to block
+=end
+
+def block(board)
+  i = 0
+  while i < 7
+    # duplicate the board
+    testBoard = board.copy
+    # add the index you want to test for 
+    testBoard.addDisc(:R, i)
+    # if index you are test for wins then return index to block
+    return i if testBoard.hasWon?(:R)
+    # clear the test board
+    testBoard = Board.new
+    i += 1
+  end
+  # no wins detected return -1
+  return nil   
+end
+
+=begin 
+ The only way that you can 'help' the opponenet win is if their 
+ disc is placed on top of yours. Horizantaly your disc has no helpful 
+ value, and only verticaly can you help the opponent win so we check for that.
+=end
+def avoidMoves(board)
+  i = 0
+  avoid = Array.new
+  while i < 7
+    # duplicate the board
+    testBoard = board.copy
+    # add the index you want to test for 
+    testBoard.addDisc(:O, i)
+    testBoard.addDisc(:R, i)
+    # if index you are test for wins then add index to avoid list
+    avoid.push(i) if testBoard.hasWon?(:R)
+    # clear the test board
+    testBoard = Board.new
+    i += 1
+  end
+  # no wins detected return nil
+  return nil
+end
+
+=begin
+  Builds moves to achieve vertical and diagonal wins
+  first checks if a win is clearly available if not it
+  adds disc at a random available moveset
+=end
+def buildWin(board, moves)
+  moveSet = moves.each {|move| # for each available move
+    testBoard = board.copy # duplicate original board
+    testBoard.addDisc(:O, move) # add move to the board
+    move if (testBoard.diagonalDownWin?(:O) || # then add if it generates a win
+      testBoard.diagonalUpWin?(:O) || 
+      testBoard.verticalWin?(:O))
+  }
+  if !moveSet.nil? # select a moveset that allows for win
+    return moveSet.sample
+  else # if not take a random move from the available moves
+    return nil
+  end
+end
 
 #------------------------------------------------------------------
 def testResult(testID, move, targets, intent)
@@ -87,40 +180,39 @@ def testResult(testID, move, targets, intent)
   end
 end
 
-def engine(board)
-  while (!board.won?(:R) || !board.won?(:O))
-
-  end
-
-end
-
+#loop to play the game
 board = Board.new
-engine(board)
+while !board.hasWon?(:R) && !board.hasWon?(:O)
+  move = gets.chomp.to_i
+  # If the input is not within range redo loop
+  board.addDisc(:R, move)
+  robotMove(board)
+  board.print
+end
 
 #------------------------------------------------------------------
 # test some robot-player behaviors
 # testboard1 = Board.new
-# testboard1.add_disc(:R,4)
-# testboard1.add_disc(:O,4)
-# testboard1.add_disc(:R,5)
-# testboard1.add_disc(:O,5)
-# testboard1.add_disc(:R,6)
-# testboard1.add_disc(:O,6)
+# testboard1.addDisc(:R,4)
+# testboard1.addDisc(:O,4)
+# testboard1.addDisc(:R,5)
+# testboard1.addDisc(:O,5)
+# testboard1.addDisc(:R,6)
+# testboard1.addDisc(:O,6)
 # testResult(:hwin, robotMove(:R, testboard1),[3], 'robot should take horizontal win')
 # testboard1.print
 #
 # testboard2 = Board.new
-# testboard2.add_discs(:R, [3, 1, 3, 2, 3, 4]);
+# testboard2.addDiscs(:R, [3, 1, 3, 2, 3, 4]);
 # testResult(:vwin, robotMove(:R, testboard2), [3], 'robot should take vertical win')
 # testboard2.print
 #
 # testboard3 = Board.new
-# testboard3.add_discs(:O, [3, 1, 4, 5, 2, 1, 6, 0, 3, 4, 5, 3, 2, 2, 6 ]);
+# testboard3.addDiscs(:O, [3, 1, 4, 5, 2, 1, 6, 0, 3, 4, 5, 3, 2, 2, 6 ]);
 # testResult(:dwin, robotMove(:R, testboard3), [3], 'robot should take diagonal win')
 # testboard3.print
 #
 # testboard4 = Board.new
-# testboard4.add_discs(:O, [1,1,2,2,3])
+# testboard4.addDiscs(:O, [1,1,2,2,3])
 # testResult(:preventHoriz, robotMove(:R, testboard4), [4], 'robot should avoid giving win')
 # testboard4.print
-
